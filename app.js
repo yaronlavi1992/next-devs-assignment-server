@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const authRoutes = require('./routes/authRoutes');
 const cookieParser = require('cookie-parser');
-const { requireAuth } = require('./middleware/authMiddleware');
+const { requireAuth, checkUser } = require('./middleware/authMiddleware');
 const path = require('path');
 
 const app = express();
@@ -10,6 +10,15 @@ const app = express();
 // middleware
 app.use(express.json());
 app.use(cookieParser());
+
+// routes
+app.get('*', checkUser);
+app.use(authRoutes);
+app.use(express.static(path.join(__dirname, 'build')));
+// app.get('/*', (req, res) => {
+app.get('/*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 
 // database connection
 const dbURI =
@@ -22,12 +31,3 @@ mongoose
   })
   .then((result) => app.listen(process.env.PORT || 5000))
   .catch((err) => console.log(err));
-
-// routes
-app.use(express.static(path.join(__dirname, '..', 'public')));
-// app.use(express.static(path.join(__dirname, 'build')));
-app.use(authRoutes);
-app.get('*', requireAuth, (req, res, next) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  // res.sendFile(path.resolve(__dirname, 'public', 'index.html'));
-});
